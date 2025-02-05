@@ -1,6 +1,6 @@
 # QT IoT Device Data Collection & Remote Management
 
-**QT** is a modular Python-based codebase designed for remote IoT deployments (e.g., on a Raspberry Pi). It provides robust data collection, local logging, remote management (activation/deactivation, self-update), and visual status indication via LEDs. Originally written as a monolithic script, the functionality has now been refactored into separate, testable modules.
+**QT** is a modular Python-based codebase designed for remote IoT deployments (e.g., on a Raspberry Pi). It provides robust data collection, local logging, remote management (activation/deactivation, self-update), and visual status indication via LEDs. 
 
 This repository includes modules for:
 - **Configuration Management**
