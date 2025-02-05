@@ -13,7 +13,6 @@ def run_checker():
     """
     if is_process_running('mainBOB.py'):
         logger.info("mainBOB is running.")
-        # Optionally: upload the log file via FTP here.
     else:
         logger.error("mainBOB is not running. Rebooting...")
         log_file = os.path.join(LOG_DIR, 'theminion.log')
