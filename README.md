@@ -1,13 +1,18 @@
-# QT Device Data Collection and Remote Management
+# BOB IoT Device Data Collection & Remote Management
 
-**QT** is a modular Python codebase designed for IoT devices (such as a Raspberry Pi) that performs the following tasks:
-- **Data Collection:** Periodically runs internet speed tests and captures GPS data.
-- **Data Logging:** Writes the results to CSV files with a persistent session identifier.
-- **Remote Management:** Supports activation/deactivation, self-updates, and process monitoring.
-- **Status Indication:** Uses LED signals to indicate system status.
-- **Captive Portal:** Optionally redirects HTTP traffic (via a built-in Flask server) to a specified URL (for example, a survey).
+**BOB** is a modular Python-based codebase designed for remote IoT deployments (e.g., on a Raspberry Pi). It provides robust data collection, local logging, remote management (activation/deactivation, self-update), and visual status indication via LEDs. Originally written as a monolithic script, the functionality has now been refactored into separate, testable modules.
 
-This project is organized into several modules to keep the code modular, maintainable, and testable.
+This repository includes modules for:
+- **Configuration Management**
+- **Data Collection (Internet Speed & GPS)**
+- **LED Status Control**
+- **Remote Activation/Deactivation**
+- **FTP Data Upload & Local Cleanup**
+- **Internet Connectivity & Public IP Check**
+- **Self-Update (Speedtest Upgrade & Application Update)**
+- **Process Monitoring & System Reboot**
+- **Session Management**
+- **A Captive Portal** (optional)
 
 ## Table of Contents
 
@@ -18,136 +23,183 @@ This project is organized into several modules to keep the code modular, maintai
   - [__init__.py](#__initpy)
   - [checker.py](#checkerpy)
   - [gps.py](#gpspy)
-  - [logger.py](#loggerpy)
-  - [main_app.py](#main_apppy)
+  - [led.py](#ledpy)
+  - [internet.py](#internetpy)
+  - [data_uploader.py](#data_uploaderpy)
+  - [activation.py](#activationpy)
+  - [speedtest_upgrade.py](#speedtest_upgradepy)
   - [process_utils.py](#process_utilspy)
   - [session.py](#sessionpy)
   - [updater.py](#updaterpy)
   - [ftp_client.py](#ftp_clientpy)
+  - [main_app.py](#main_apppy)
+  - [setup.py](#setuppy)
+  - [run_checker.py](#run_checkerpy)
+  - [run_main.py](#run_mainpy)
+  - [Config.ini](#configini)
 - [Setup & Installation](#setup--installation)
 - [Usage](#usage)
 - [License](#license)
 
 ## Overview
 
-The project is tailored for remote deployment in environments where robust data collection (internet speed and GPS) and remote management are crucial. It continuously monitors connectivity and hardware, logs results locally, and uses FTP for data upload and software updates. The modular design means that individual components (such as LED control or session management) can be modified or replaced independently.
+The BOB project is tailored for deployments where:
+- **Data Collection:** Periodically perform internet speed tests and capture GPS data.
+- **Data Logging:** Write the results to CSV files with a persistent session ID.
+- **Visual Feedback:** Use LED indicators to signal system status (startup, internet active, GPS lock, completion).
+- **Remote Management:** Check for remote activation, perform self-updates, and monitor the main process.
+- **Connectivity:** Verify internet access and retrieve the public IP address.
+- **FTP Operations:** Upload collected CSV data and download software updates.
+
+The modular design allows each function to be maintained and tested separately.
 
 ## Modules
 
 ### config.py
 - **Purpose:**  
-  Provides a central location for configuration parameters.  
+  Centralizes configuration parameters.
 - **Details:**  
-  - Sets default configuration values (e.g., base directories, FTP settings, logging parameters, GPS settings, speed test interval).
-  - Reads an override configuration from an `INI` file (`config.ini`) if present.
-  - Exposes module-level constants (like `BASE_DIR`, `LOG_DIR`, `DATA_DIR`, and FTP credentials).
-  - Contains a helper function `get_device_id()` to retrieve a unique device identifier from `/proc/cpuinfo`.
+  - Provides default settings (directories, FTP credentials, logging, GPS, speedtest interval, etc.).
+  - Loads overrides from `Config.ini` if available.
+  - Exposes key constants (e.g., `BASE_DIR`, `LOG_DIR`, `DATA_DIR`, `FTP_DETAILS`).
+  - Contains `get_device_id()` to extract a unique device identifier from `/proc/cpuinfo`.
 
 ### captive_portal.py
 - **Purpose:**  
-  Implements a simple captive portal using Flask.
+  Implements a captive portal using Flask.
 - **Details:**  
-  - Catches all HTTP requests and redirects them to a survey URL (or any desired URL).
-  - Sets up (and clears) iptables rules to redirect traffic from port 80 to the Flask server port.
-  - Provides helper functions to start and stop the captive portal (including threading for non-blocking execution).
+  - Catches all HTTP requests and redirects them to a predefined URL (e.g., a survey).
+  - Sets up and clears iptables rules to redirect port 80 traffic to the captive portal.
+  - Provides functions to start and stop the portal in a non-blocking thread.
 
 ### __init__.py
 - **Purpose:**  
-  Initializes the `bob` package.
+  Initializes the package.
 - **Details:**  
-  - Optionally imports key constants and objects (for example, `DEVICE_ID` and `SESSION_FILE`) and the configured logger.
+  - Imports key constants and objects (such as `DEVICE_ID` and the logger) for easy package-wide access.
 
 ### checker.py
 - **Purpose:**  
-  Monitors the main application process.
+  Monitors whether the main application is running.
 - **Details:**  
-  - Uses process utilities to verify if `mainBOB.py` is running.
-  - Logs an error and archives log files if the main application is not detected.
-  - Triggers a device reboot through functions provided by `process_utils.py` when necessary.
+  - Uses functions from `process_utils.py` (with `psutil`) to check for the main process.
+  - Archives logs and reboots the device if the main process isn’t found.
 
 ### gps.py
 - **Purpose:**  
-  Handles GPS device interfacing and data parsing.
+  Manages GPS device interfacing and data parsing.
 - **Details:**  
-  - Opens a serial connection to the GPS device (using settings from `config.py`).
-  - Reads NMEA sentences, decodes them (converting from DDDMM.MMMMM to decimal degrees), and parses out timestamp, latitude, and longitude.
-  - Provides a helper function `read_gps()` that attempts multiple readings before returning valid data (or an error).
+  - Opens a serial connection using parameters from `config.py`.
+  - Reads NMEA sentences (e.g., `$GPGGA`), decodes coordinates from DDDMM.MMMMM format into decimal degrees, and timestamps the reading.
+  - Provides a helper function `read_gps()` that makes several attempts to obtain valid data.
 
-### logger.py
+### led.py
 - **Purpose:**  
-  Configures the logging for the entire codebase.
+  Provides functions for controlling status LEDs.
 - **Details:**  
-  - Ensures that a designated log directory exists.
-  - Sets up logging with a specific format and log level.
-  - Provides a package-level logger instance that all other modules import and use.
+  - Wraps low-level LED functions using the APA102 driver.
+  - Offers functions like `ready_red_leds()`, `intled_green()`, `gpsled_green()`, and `bluelight_minion()` to set LED colors.
+  - Allows visual signaling for startup, internet readiness, GPS lock, and completion.
 
-### main_app.py
+### internet.py
 - **Purpose:**  
-  Serves as the core application loop.
+  Checks internet connectivity and retrieves the public IP address.
 - **Details:**  
-  - Performs periodic internet speed tests (using the `speedtest` module) and logs the results to a CSV file.
-  - Captures GPS data and writes it to a separate CSV file.
-  - Integrates with other modules for LED signaling (startup, status, and data capture), activation verification, FTP data upload, and self-update routines.
-  - Uses a persistent session ID (from `session.py`) to group data collected during a deployment cycle.
-  - Continuously loops with a configurable delay (via `SPEED_TEST_INTERVAL`).
+  - Contains `check_internet()` which performs connectivity tests (e.g., accessing google.com) with exponential backoff.
+  - Provides `get_public_ip()` to fetch the public IP from an external service (such as ipify).
+
+### data_uploader.py
+- **Purpose:**  
+  Handles FTP upload and cleanup of CSV data files.
+- **Details:**  
+  - Uses the FTP client to change directories, upload CSV files, and then delete them locally.
+  - Ensures that both speed test and GPS CSV files are transmitted to the remote server.
+
+### activation.py
+- **Purpose:**  
+  Manages remote activation/deactivation.
+- **Details:**  
+  - Downloads an activation file from the FTP server.
+  - Checks if the activation file indicates that the device is “activated.”
+  - Provides functions to upload a deactivation file and to mark the device as “EXTINCT” by archiving log files.
+
+### speedtest_upgrade.py
+- **Purpose:**  
+  Checks the installed version of `speedtest-cli` and upgrades it if needed.
+- **Details:**  
+  - Compares the current version with a target version.
+  - If the target version matches, triggers an upgrade via a subprocess call.
+  - Can optionally trigger a reboot after upgrading.
 
 ### process_utils.py
 - **Purpose:**  
-  Provides utility functions for process management and system commands.
+  Contains utilities for process management and system commands.
 - **Details:**  
-  - Contains a function to check if a process is running (using the `psutil` library).
-  - Provides a helper function to reboot the device via a system call.
+  - Uses the `psutil` library to check if a specific process is running.
+  - Provides a `reboot_device()` function that calls the system reboot command.
 
 ### session.py
 - **Purpose:**  
-  Manages session data for the deployment period.
+  Manages session creation and persistence.
 - **Details:**  
-  - Generates a unique session ID that combines the device ID, a timestamp, and a random UUID.
-  - Saves and loads session data to/from a JSON file.
-  - Validates if a session is still active based on a configurable duration.
-  - Provides a helper function `get_session()` to retrieve or create a session.
+  - Generates a unique session ID based on the device ID, timestamp, and a random UUID.
+  - Saves session data to a JSON file and validates its expiration based on a configured duration.
+  - Provides `get_session()` to retrieve or create a session for grouping data.
 
 ### updater.py
 - **Purpose:**  
-  Handles software update operations.
+  Handles software updates.
 - **Details:**  
-  - Extracts version information from versioned filenames (e.g., `mainBOBv2.10.py`).
-  - Compares local and remote versions (the remote version can be simulated or retrieved via FTP).
-  - Downloads an update using the FTP client if a newer version is available.
-  - Installs the update by replacing the main application file and triggering a reboot.
+  - Extracts version information from filenames (e.g., `mainBOBv2.10.py`).
+  - Compares the local and remote versions.
+  - Uses the FTP client (via `ftp_client.py`) to download new versions.
+  - Installs the update (replacing the main file and removing old files) and triggers a reboot.
 
 ### ftp_client.py
 - **Purpose:**  
-  Encapsulates FTP operations using secure FTP (FTP_TLS).
+  Encapsulates secure FTP operations.
 - **Details:**  
-  - Provides methods for logging in, changing directories, uploading files, downloading files, and closing the connection.
-  - Serves as a common client for uploading activation files, CSV data, and downloading updates.
+  - Uses `FTP_TLS` for secure connections.
+  - Provides methods for logging in, changing directories, uploading, and downloading files.
+  - Serves both the update and activation modules.
+
+### main_app.py
+- **Purpose:**  
+  Contains the main application loop.
+- **Details:**  
+  - Initializes system state (LEDs, connectivity, activation, and session).
+  - Performs periodic internet speed tests (using the `speedtest` module) and logs results to a CSV file.
+  - Captures GPS data and logs it to a separate CSV file.
+  - Calls functions from `led.py` to indicate status.
+  - Checks for speedtest upgrades and triggers them if necessary.
+  - Periodically uploads CSV files using `data_uploader.py`.
+  - Runs continuously with a sleep interval defined by `SPEED_TEST_INTERVAL`.
 
 ### setup.py
 - **Purpose:**  
-  Configures the package for installation.
+  Sets up the package for installation.
 - **Details:**  
   - Specifies package metadata and dependencies (e.g., `psutil`, `speedtest-cli`, `pyserial`, `Flask`, `pytz`).
-  - Defines console script entry points (such as `run-checker`, `run-updater`, and `run-main`) for command-line access.
+  - Defines entry points for console scripts such as `run-checker`, `run-updater`, and `run-main`.
 
 ### run_checker.py
 - **Purpose:**  
-  A small script to run the checker module.
+  A small utility to execute the process checker.
 - **Details:**  
-  - Intended as a command-line tool to monitor the main application process.
+  - Runs the `checker.py` module to verify that the main application is active.
 
 ### run_main.py
 - **Purpose:**  
-  A lightweight wrapper script to start the main application loop.
+  A wrapper to start the main application loop.
 - **Details:**  
-  - Simply imports and calls `main_loop()` from `main_app.py`.
+  - Simply imports and runs `main_app.py`.
 
 ### Config.ini
 - **Purpose:**  
-  Allows overriding default configuration values.
+  Allows overriding default configuration settings.
 - **Details:**  
-  - Contains settings for base directories, session duration, FTP credentials, logging, speedtest intervals, GPS configuration, and the captive portal URL.
-  - Is read by `config.py` to override the built-in defaults.
+  - Contains settings for base directories, FTP credentials, logging, session duration, GPS configuration, speedtest intervals, and the captive portal URL.
+  - Is read by `config.py` to override built-in defaults.
 
 ## Setup & Installation
 
