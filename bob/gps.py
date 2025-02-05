@@ -89,7 +89,7 @@ def read_gps():
     logger.error("Unable to obtain valid GPS data after %d attempts", attempts)
     return None
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     gps_data = read_gps()
     if gps_data:
         print("GPS Data:", gps_data)
