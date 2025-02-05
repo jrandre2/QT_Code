@@ -1,97 +1,157 @@
-QT CODE ASSIGNMENTS AND MODULE OVERVIEW
-===========================================
+# QT Device Data Collection and Remote Management
 
-1. Configuration & Global Settings
-------------------------------------
-Module: bob/config.py
-  - Define base directories for logs, data, versions.
-  - Specify FTP credentials and target directories.
-  - Set the survey URL for captive portal redirection.
-  - Retrieve the fixed device identifier (from /proc/cpuinfo).
-  - Configure session parameters (SESSION_FILE location, SESSION_DURATION_DAYS).
+**QT** is a modular Python codebase designed for IoT devices (such as a Raspberry Pi) that performs the following tasks:
+- **Data Collection:** Periodically runs internet speed tests and captures GPS data.
+- **Data Logging:** Writes the results to CSV files with a persistent session identifier.
+- **Remote Management:** Supports activation/deactivation, self-updates, and process monitoring.
+- **Status Indication:** Uses LED signals to indicate system status.
+- **Captive Portal:** Optionally redirects HTTP traffic (via a built-in Flask server) to a specified URL (for example, a survey).
 
-2. Logging
-----------
-Module: bob/logger.py
-  - Configure centralized logging (log file path, logging level, and format).
-  - Provide a logger instance for use across the project.
+This project is organized into several modules to keep the code modular, maintainable, and testable.
 
-3. FTP Operations
------------------
-Module: bob/ftp_client.py
-  - Provide helper functions (or a class) to connect to the FTP server.
-  - Implement methods for uploading files (logs, CSV data) and downloading updates.
+## Table of Contents
 
-4. Process Utilities
---------------------
-Module: bob/process_utils.py
-  - Implement process checking (using psutil) to confirm if specific processes are running.
-  - Implement a function to reboot the Raspberry Pi when needed.
+- [Overview](#overview)
+- [Modules](#modules)
+  - [config.py](#configpy)
+  - [captive_portal.py](#captive_portalpy)
+  - [__init__.py](#__initpy)
+  - [checker.py](#checkerpy)
+  - [gps.py](#gpspy)
+  - [logger.py](#loggerpy)
+  - [main_app.py](#main_apppy)
+  - [process_utils.py](#process_utilspy)
+  - [session.py](#sessionpy)
+  - [updater.py](#updaterpy)
+  - [ftp_client.py](#ftp_clientpy)
+- [Setup & Installation](#setup--installation)
+- [Usage](#usage)
+- [License](#license)
 
-5. Session Management
----------------------
-Module: bob/session.py
-  - Manage a persistent session (or household) ID.
-  - Check for an existing session file and verify it is within the valid duration.
-  - Generate a new session ID (combining the device ID, current timestamp, and a random UUID) if needed.
-  - Save and load the session data for consistent tagging of data across reboots during a deployment.
+## Overview
 
-6. Software Updates
--------------------
-Module: bob/updater.py
-  - Check for new versions of the main application (comparing local and remote versions).
-  - Download updates via FTP if a new version is available.
-  - Install updates by copying new files, removing outdated ones, and initiating a reboot.
+The project is tailored for remote deployment in environments where robust data collection (internet speed and GPS) and remote management are crucial. It continuously monitors connectivity and hardware, logs results locally, and uses FTP for data upload and software updates. The modular design means that individual components (such as LED control or session management) can be modified or replaced independently.
 
-7. Watchdog / Process Checker
------------------------------
-Module: bob/checker.py
-  - Periodically verify that the main application is running.
-  - If the main app is not running, log the error, archive logs, and reboot the device.
+## Modules
 
-8. Captive Portal for Survey Redirection
-------------------------------------------
-Module: bob/captive_portal.py
-  - Set iptables rules to redirect all HTTP traffic (port 80) to a local port (e.g., 8080).
-  - Start a lightweight Flask server that intercepts all HTTP requests.
-  - Immediately respond to every request with an HTTP 302 redirect to the survey URL.
-  - Provide functions to start and stop the captive portal (and to clear iptables rules).
+### config.py
+- **Purpose:**  
+  Provides a central location for configuration parameters.  
+- **Details:**  
+  - Sets default configuration values (e.g., base directories, FTP settings, logging parameters, GPS settings, speed test interval).
+  - Reads an override configuration from an `INI` file (`config.ini`) if present.
+  - Exposes module-level constants (like `BASE_DIR`, `LOG_DIR`, `DATA_DIR`, and FTP credentials).
+  - Contains a helper function `get_device_id()` to retrieve a unique device identifier from `/proc/cpuinfo`.
 
-9. GPS Functionality
---------------------
-Module: bob/gps.py
-  - Open and manage the serial connection to the GPS hat (using /dev/ttyAMA0 or similar).
-  - Read and parse NMEA sentences (especially $GPGGA) for latitude and longitude.
-  - Decode the NMEA format into decimal degrees.
-  - Return GPS data (timestamp, latitude, longitude) for logging or FTP upload.
+### captive_portal.py
+- **Purpose:**  
+  Implements a simple captive portal using Flask.
+- **Details:**  
+  - Catches all HTTP requests and redirects them to a survey URL (or any desired URL).
+  - Sets up (and clears) iptables rules to redirect traffic from port 80 to the Flask server port.
+  - Provides helper functions to start and stop the captive portal (including threading for non-blocking execution).
 
-10. Core Application
---------------------
-Module: bob/main_app.py
-  - Retrieve the persistent session ID and initialize data file names.
-  - Initialize CSV files for internet speed test results and GPS data.
-  - Run an infinite loop:
-      • Perform an internet speed test every 5 minutes using the speedtest module.
-      • Log test results (download, upload, ping) along with timestamps.
-      • Attempt to capture GPS data via bob/gps.py and log it to a separate CSV.
-      • Continue data collection over the extended deployment period.
-  - Handle errors and graceful termination (e.g., KeyboardInterrupt).
+### __init__.py
+- **Purpose:**  
+  Initializes the `bob` package.
+- **Details:**  
+  - Optionally imports key constants and objects (for example, `DEVICE_ID` and `SESSION_FILE`) and the configured logger.
 
-11. Entry Point Scripts
------------------------
-Directory: scripts/
-  - run_main.py: Launch the main application loop (bob/main_app.py).
-  - run_checker.py: Launch the watchdog (bob/checker.py).
-  - run_updater.py: Launch the updater routine (bob/updater.py).
-  - run_captive_portal.py: Launch the captive portal server (bob/captive_portal.py).
-  - Ensure these scripts are marked executable and referenced appropriately by systemd/cron.
+### checker.py
+- **Purpose:**  
+  Monitors the main application process.
+- **Details:**  
+  - Uses process utilities to verify if `mainBOB.py` is running.
+  - Logs an error and archives log files if the main application is not detected.
+  - Triggers a device reboot through functions provided by `process_utils.py` when necessary.
 
-12. Additional Documentation & Maintenance
---------------------------------------------
-- Update this assignments.txt file to reflect changes.
-- Document any environment-specific configuration (e.g., serial port differences, iptables rules requirements).
-- Keep instructions for deployment, troubleshooting, and updates in a separate README or Wiki.
+### gps.py
+- **Purpose:**  
+  Handles GPS device interfacing and data parsing.
+- **Details:**  
+  - Opens a serial connection to the GPS device (using settings from `config.py`).
+  - Reads NMEA sentences, decodes them (converting from DDDMM.MMMMM to decimal degrees), and parses out timestamp, latitude, and longitude.
+  - Provides a helper function `read_gps()` that attempts multiple readings before returning valid data (or an error).
 
-===========================================
+### logger.py
+- **Purpose:**  
+  Configures the logging for the entire codebase.
+- **Details:**  
+  - Ensures that a designated log directory exists.
+  - Sets up logging with a specific format and log level.
+  - Provides a package-level logger instance that all other modules import and use.
 
+### main_app.py
+- **Purpose:**  
+  Serves as the core application loop.
+- **Details:**  
+  - Performs periodic internet speed tests (using the `speedtest` module) and logs the results to a CSV file.
+  - Captures GPS data and writes it to a separate CSV file.
+  - Integrates with other modules for LED signaling (startup, status, and data capture), activation verification, FTP data upload, and self-update routines.
+  - Uses a persistent session ID (from `session.py`) to group data collected during a deployment cycle.
+  - Continuously loops with a configurable delay (via `SPEED_TEST_INTERVAL`).
 
+### process_utils.py
+- **Purpose:**  
+  Provides utility functions for process management and system commands.
+- **Details:**  
+  - Contains a function to check if a process is running (using the `psutil` library).
+  - Provides a helper function to reboot the device via a system call.
+
+### session.py
+- **Purpose:**  
+  Manages session data for the deployment period.
+- **Details:**  
+  - Generates a unique session ID that combines the device ID, a timestamp, and a random UUID.
+  - Saves and loads session data to/from a JSON file.
+  - Validates if a session is still active based on a configurable duration.
+  - Provides a helper function `get_session()` to retrieve or create a session.
+
+### updater.py
+- **Purpose:**  
+  Handles software update operations.
+- **Details:**  
+  - Extracts version information from versioned filenames (e.g., `mainBOBv2.10.py`).
+  - Compares local and remote versions (the remote version can be simulated or retrieved via FTP).
+  - Downloads an update using the FTP client if a newer version is available.
+  - Installs the update by replacing the main application file and triggering a reboot.
+
+### ftp_client.py
+- **Purpose:**  
+  Encapsulates FTP operations using secure FTP (FTP_TLS).
+- **Details:**  
+  - Provides methods for logging in, changing directories, uploading files, downloading files, and closing the connection.
+  - Serves as a common client for uploading activation files, CSV data, and downloading updates.
+
+### setup.py
+- **Purpose:**  
+  Configures the package for installation.
+- **Details:**  
+  - Specifies package metadata and dependencies (e.g., `psutil`, `speedtest-cli`, `pyserial`, `Flask`, `pytz`).
+  - Defines console script entry points (such as `run-checker`, `run-updater`, and `run-main`) for command-line access.
+
+### run_checker.py
+- **Purpose:**  
+  A small script to run the checker module.
+- **Details:**  
+  - Intended as a command-line tool to monitor the main application process.
+
+### run_main.py
+- **Purpose:**  
+  A lightweight wrapper script to start the main application loop.
+- **Details:**  
+  - Simply imports and calls `main_loop()` from `main_app.py`.
+
+### Config.ini
+- **Purpose:**  
+  Allows overriding default configuration values.
+- **Details:**  
+  - Contains settings for base directories, session duration, FTP credentials, logging, speedtest intervals, GPS configuration, and the captive portal URL.
+  - Is read by `config.py` to override the built-in defaults.
+
+## Setup & Installation
+
+1. **Clone the Repository:**
+   ```bash
+   git clone https://github.com/yourusername/bob.git
+   cd bob
