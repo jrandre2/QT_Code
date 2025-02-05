@@ -9,7 +9,7 @@ This repository includes modules for:
 - **Remote Activation/Deactivation**
 - **FTP Data Upload & Local Cleanup**
 - **Internet Connectivity & Public IP Check**
-- **Self-Update (Speedtest Upgrade & Application Update)**
+- **Self-Update**
 - **Process Monitoring & System Reboot**
 - **Session Management**
 - **A Captive Portal** (optional)
