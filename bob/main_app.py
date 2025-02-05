@@ -20,7 +20,6 @@ from bob.config import DATA_DIR, SPEED_TEST_INTERVAL
 from bob.session import get_session
 from bob.gps import read_gps
 
-
 def run_speedtest():
     """
     Perform an internet speed test using the speedtest module.
@@ -29,14 +28,13 @@ def run_speedtest():
     try:
         st = speedtest.Speedtest()
         st.get_best_server()
-        download_speed = st.download() / 1048576  
-        upload_speed = st.upload() / 1048576
+        download_speed = st.download() / 1048576  # Convert bytes/s to Mbps
+        upload_speed = st.upload() / 1048576      # Convert bytes/s to Mbps
         ping = st.results.ping
         return download_speed, upload_speed, ping
     except Exception as e:
         logger.error("Speedtest error: %s", e)
         return 0, 0, 0
-
 
 def write_csv_row(filename, row):
     """
@@ -49,10 +47,9 @@ def write_csv_row(filename, row):
     except Exception as e:
         logger.error("Error writing to CSV file %s: %s", filename, e)
 
-
 def initialize_csv(filename, headers):
     """
-    Create a new CSV file with the given headers if it doesn't already exist.
+    Create a new CSV file with the given headers if it doesn’t already exist.
     """
     if not os.path.exists(filename):
         try:
@@ -63,24 +60,23 @@ def initialize_csv(filename, headers):
         except Exception as e:
             logger.error("Error initializing CSV file %s: %s", filename, e)
 
-
 def main_loop():
     """
     Main application loop:
-      - Retrieves a persistent session ID.
-      - Initializes CSV files for speed test and GPS data.
-      - Every configured interval, performs a speed test and logs results.
-      - Attempts to record GPS data and logs it.
+    - Retrieves a persistent session ID.
+    - Initializes CSV files for speed test and GPS data.
+    - Every configured interval, performs a speed test and logs results.
+    - Attempts to record GPS data and logs it.
     """
     session_id = get_session()
     logger.info("Session ID for this deployment: %s", session_id)
-    
+
     speed_csv_file = os.path.join(DATA_DIR, f"{session_id}-speed.csv")
     gps_csv_file = os.path.join(DATA_DIR, f"{session_id}-gps.csv")
-    
+
     initialize_csv(speed_csv_file, ['timestamp', 'download (Mbps)', 'upload (Mbps)', 'ping (ms)'])
     initialize_csv(gps_csv_file, ['timestamp', 'latitude', 'longitude'])
-    
+
     while True:
         current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         
@@ -101,7 +97,6 @@ def main_loop():
             logger.error("GPS data unavailable at %s", current_time)
         
         time.sleep(SPEED_TEST_INTERVAL)
-
 
 if __name__ == '__main__':
     try:
