@@ -1,4 +1,4 @@
-BOB PROJECT ASSIGNMENTS AND MODULE OVERVIEW
+QT CODE ASSIGNMENTS AND MODULE OVERVIEW
 ===========================================
 
 1. Configuration & Global Settings
