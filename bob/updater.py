@@ -1,5 +1,6 @@
 # bob/updater.py
 
+from bob.config import FTP_DETAILS
 from decimal import Decimal
 import glob
 import os
