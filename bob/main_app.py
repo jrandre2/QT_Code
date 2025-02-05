@@ -16,22 +16,19 @@ import os
 import speedtest
 
 from bob.logger import logger
-from bob.config import DATA_DIR  # DATA_DIR should be defined in config.py (e.g., '/opt/BOB/data/')
+from bob.config import DATA_DIR, SPEED_TEST_INTERVAL
 from bob.session import get_session
 from bob.gps import read_gps
+
 
 def run_speedtest():
     """
     Perform an internet speed test using the speedtest module.
-    Returns:
-        download_speed (float): Download speed in Mbps.
-        upload_speed (float): Upload speed in Mbps.
-        ping (float): Ping in milliseconds.
+    Returns download, upload speeds in Mbps and ping in ms.
     """
     try:
         st = speedtest.Speedtest()
         st.get_best_server()
-        # Convert from bits/s to Mbps (1 Mbps = 1048576 bits/s)
         download_speed = st.download() / 1048576  
         upload_speed = st.upload() / 1048576
         ping = st.results.ping
@@ -39,6 +36,7 @@ def run_speedtest():
     except Exception as e:
         logger.error("Speedtest error: %s", e)
         return 0, 0, 0
+
 
 def write_csv_row(filename, row):
     """
@@ -50,6 +48,7 @@ def write_csv_row(filename, row):
             writer.writerow(row)
     except Exception as e:
         logger.error("Error writing to CSV file %s: %s", filename, e)
+
 
 def initialize_csv(filename, headers):
     """
@@ -64,57 +63,45 @@ def initialize_csv(filename, headers):
         except Exception as e:
             logger.error("Error initializing CSV file %s: %s", filename, e)
 
+
 def main_loop():
     """
-    Main application loop.
-    
-    - Retrieves a persistent session ID.
-    - Initializes CSV files for speed test data and GPS data.
-    - Every 5 minutes:
-      - Performs an internet speed test,
-      - Logs the results with a timestamp,
-      - Attempts to read GPS data and log it.
+    Main application loop:
+      - Retrieves a persistent session ID.
+      - Initializes CSV files for speed test and GPS data.
+      - Every configured interval, performs a speed test and logs results.
+      - Attempts to record GPS data and logs it.
     """
-    # Retrieve or generate the persistent session ID.
     session_id = get_session()
     logger.info("Session ID for this deployment: %s", session_id)
     
-    # Build filenames for data logs using the session ID.
     speed_csv_file = os.path.join(DATA_DIR, f"{session_id}-speed.csv")
     gps_csv_file = os.path.join(DATA_DIR, f"{session_id}-gps.csv")
     
-    # Initialize CSV files with headers if they don't already exist.
     initialize_csv(speed_csv_file, ['timestamp', 'download (Mbps)', 'upload (Mbps)', 'ping (ms)'])
     initialize_csv(gps_csv_file, ['timestamp', 'latitude', 'longitude'])
-    
-    # Define the interval between speed tests (in seconds).
-    speed_test_interval = 300  # 300 seconds = 5 minutes
     
     while True:
         current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         
-        # Perform an internet speed test.
         download, upload, ping = run_speedtest()
-        logger.info("Speedtest results at %s - Download: %.2f Mbps, Upload: %.2f Mbps, Ping: %.2f ms",
+        logger.info("Speedtest at %s - Download: %.2f Mbps, Upload: %.2f Mbps, Ping: %.2f ms",
                     current_time, download, upload, ping)
                     
-        # Write speed test results to the CSV file.
         write_csv_row(speed_csv_file, [current_time, download, upload, ping])
         
-        # Optionally, attempt to record GPS data.
-        gps_data = read_gps()  # Expected to return [timestamp, latitude, longitude] or None.
+        gps_data = read_gps()
         if gps_data:
-            # Format the GPS timestamp as a string.
             gps_timestamp = gps_data[0].strftime("%Y-%m-%d %H:%M:%S")
             latitude = gps_data[1]
             longitude = gps_data[2]
             write_csv_row(gps_csv_file, [gps_timestamp, latitude, longitude])
-            logger.info("GPS data recorded at %s - Latitude: %s, Longitude: %s", gps_timestamp, latitude, longitude)
+            logger.info("GPS data at %s - Latitude: %s, Longitude: %s", gps_timestamp, latitude, longitude)
         else:
             logger.error("GPS data unavailable at %s", current_time)
         
-        # Wait for the next measurement interval.
-        time.sleep(speed_test_interval)
+        time.sleep(SPEED_TEST_INTERVAL)
+
 
 if __name__ == '__main__':
     try:
