@@ -3,11 +3,11 @@ import socket
 import config
 
 cfg = config.load_config()
-FTP_SERVER   = cfg.get("ftp", {}).get("SERVER", "ftp.example.com")
-FTP_PORT     = cfg.get("ftp", {}).get("PORT", 21)
-USERNAME     = cfg.get("ftp", {}).get("USERNAME", "user")
-PASSWORD     = cfg.get("ftp", {}).get("PASSWORD", "pass")
-REMOTE_PATH  = cfg.get("ftp", {}).get("REMOTE_PATH", "/upload/data.txt")
+FTP_SERVER = cfg.get("ftp", {}).get("SERVER", "ftp.example.com")
+FTP_PORT = cfg.get("ftp", {}).get("PORT", 21)
+USERNAME = cfg.get("ftp", {}).get("USERNAME", "user")
+PASSWORD = cfg.get("ftp", {}).get("PASSWORD", "pass")
+REMOTE_PATH = cfg.get("ftp", {}).get("REMOTE_PATH", "/upload/data.txt")
 
 def ftp_upload_data(data):
     try:
@@ -24,22 +24,13 @@ def ftp_upload_data(data):
                 line += ch
             return line.decode("utf-8").strip()
         
-        # Read welcome message
         print("FTP:", recv_line(s))
-        
-        # Send USER command
         s.send("USER {}\r\n".format(USERNAME).encode())
         print("FTP:", recv_line(s))
-        
-        # Send PASS command
         s.send("PASS {}\r\n".format(PASSWORD).encode())
         print("FTP:", recv_line(s))
-        
-        # Set binary mode
         s.send("TYPE I\r\n".encode())
         print("FTP:", recv_line(s))
-        
-        # Enter passive mode
         s.send("PASV\r\n".encode())
         resp = recv_line(s)
         print("FTP PASV:", resp)
@@ -48,24 +39,15 @@ def ftp_upload_data(data):
         numbers = resp[start+1:end].split(',')
         ip = '.'.join(numbers[:4])
         port = (int(numbers[4]) << 8) + int(numbers[5])
-        
-        # Send STOR command
         s.send("STOR {}\r\n".format(REMOTE_PATH).encode())
         print("FTP:", recv_line(s))
         
-        # Connect to the data socket
         data_sock = socket.socket()
         data_addr = socket.getaddrinfo(ip, port)[0][-1]
         data_sock.connect(data_addr)
-        
-        # Send data
         data_sock.send(data.encode())
         data_sock.close()
-        
-        # Read transfer confirmation
         print("FTP:", recv_line(s))
-        
-        # Quit FTP session
         s.send("QUIT\r\n".encode())
         print("FTP:", recv_line(s))
         s.close()
