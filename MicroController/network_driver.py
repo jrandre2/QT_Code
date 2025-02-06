@@ -1,5 +1,5 @@
 # network_driver.py
-import wizchip  # Native module from C wrapper (see extmod/wizchip/mod_wizchip.c)
+import wizchip  # Native module from C wrapper (see microcontroller/wizchip/mod_wizchip.c)
 
 def init_ethernet():
     try:
