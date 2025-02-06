@@ -9,7 +9,7 @@ def init_ethernet():
         cs = Pin(15, Pin.OUT)
         eth = w6100.W6100(spi, cs)
         eth.init()  # Perform W6100-specific initialization.
-        return True
+        return eth
     except Exception as e:
         print("Ethernet init error:", e)
-        return False
+        return None
