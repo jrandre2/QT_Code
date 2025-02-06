@@ -1,15 +1,10 @@
 # network_driver.py
-from machine import SPI, Pin
-import lib.w6100 as w6100
+import wizchip  # Native module from C wrapper (see extmod/wizchip/mod_wizchip.c)
 
 def init_ethernet():
     try:
-        # Adjust SPI parameters and pin assignments as required for your board.
-        spi = SPI(1, baudrate=10_000_000, polarity=0, phase=0)
-        cs = Pin(15, Pin.OUT)
-        eth = w6100.W6100(spi, cs)
-        eth.init()  # Perform W6100-specific initialization.
-        return eth
+        wizchip.init()  # Call the native initialization function
+        return wizchip   # Return the module so that get_ip(), etc., can be called.
     except Exception as e:
         print("Ethernet init error:", e)
         return None
