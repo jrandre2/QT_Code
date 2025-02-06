@@ -1,15 +1,27 @@
-/ (Pico Filesystem Root)
-├── main.py              # Main application entry point
-├── config.py            # Loads configuration from config.json
-├── session.py           # Handles persistent session creation and storage
-├── captive_portal.py    # Implements a simple HTTP server (captive portal)
-├── speedtest.py         # Implements download, upload, and ping tests
-├── logging.py           # Optimized logging functions (timestamps to the minute)
-├── network_driver.py    # Initializes the Ethernet interface using the W6100 driver; returns the driver instance
-├── ftp_client.py        # Basic FTP client for uploading buffered data
-├── utils.py             # Utility functions (e.g., timestamp formatting)
-├── config.json          # JSON configuration file
-├── session.json          # (Created at runtime) Persistent session data
-├── log.txt              # (Created at runtime) Log file
-└── lib/
-    └── w6100.py         # Low‑level driver for the W6100 Ethernet chip
+/ (Root)
+├── config.json              # Application configuration file
+├── README.md                # Project documentation
+├── CMakeLists.txt           # Top-level CMake configuration for building firmware
+├── boards/                  # Board-specific configuration and documentation
+│   └── W6100_EVB_PICO2/
+│       ├── board_config.h   # Pin and clock definitions for the board
+│       └── README.md
+├── extmod/                  # Native modules for MicroPython
+│   └── wizchip/             # Native module wrapping the official WIZnet driver
+│       ├── mod_wizchip.c    # C wrapper (shown below)
+│       └── CMakeLists.txt   # (Optional) Build configuration for the module
+├── lib/                     # Pure Python helper libraries (if any)
+│   └── (currently empty)
+├── ports/                   # MicroPython core and port‑specific files (for RP2350)
+│   └── rp2350/             # RP2350 port (provided by MicroPython)
+│       └── ...              # 
+└── src/                     # High-level MicroPython application code
+    ├── main.py              # Main application: init, tasks, etc.
+    ├── config.py            # Loads configuration from config.json
+    ├── session.py           # Manages persistent session data
+    ├── captive_portal.py    # Simple HTTP server (captive portal)
+    ├── speedtest.py         # Functions for download, upload, and ping tests
+    ├── logging.py           # Logging (timestamps to the minute)
+    ├── network_driver.py    # Calls native module to initialize the ethernet
+    ├── ftp_client.py        # FTP client to upload buffered data
+    └── utils.py             # Utility functions
