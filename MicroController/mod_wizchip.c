@@ -3,9 +3,7 @@
 // Minimal MicroPython module wrapping selected functions from the official
 // WIZnet driver for the W6100-EVB-Pico2.  This code is based on the driver
 // implementation in the WIZnet-PICO-v6-C repository.
-//
-// Copyright (c) 2019, WIZnet Co., LTD.
-// Released under the MIT License.
+
 
 #include "py/obj.h"
 #include "py/runtime.h"
@@ -89,6 +87,6 @@ const mp_obj_module_t wizchip_user_cmodule = {
 };
 
 // This macro registers the module and makes it available in MicroPython as "wizchip".
-// The third argument (MODULE_WIZCHIP_ENABLED) is a macro that you can define in your build
+// The third argument (MODULE_WIZCHIP_ENABLED) is a macro that can be defined in your build
 // configuration to conditionally compile this module.
 MP_REGISTER_MODULE(MP_QSTR_wizchip, wizchip_user_cmodule, MODULE_WIZCHIP_ENABLED);
