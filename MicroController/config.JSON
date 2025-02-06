@@ -1,0 +1,20 @@
+{
+  "BASE_DIR": "/flash/QT/",
+  "SESSION_DURATION_DAYS": 10,
+  "captive_portal": {
+    "SURVEY_URL": "https://survey.example.com"
+  },
+  "speedtest": {
+    "SPEED_TEST_INTERVAL": 300,
+    "UPLOAD_TEST_INTERVAL": 300,
+    "PING_TEST_INTERVAL": 300,
+    "PING_TARGET": "8.8.8.8"
+  },
+  "ftp": {
+    "SERVER": "ftp.example.com",
+    "PORT": 21,
+    "USERNAME": "user",
+    "PASSWORD": "pass",
+    "REMOTE_PATH": "/upload/data.txt"
+  }
+}
