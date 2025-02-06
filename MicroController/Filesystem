@@ -1,0 +1,15 @@
+/ (Pico Filesystem Root)
+├── main.py              # Main application entry point
+├── config.py            # Loads configuration from config.json
+├── session.py           # Handles persistent session creation and storage
+├── captive_portal.py    # Implements a simple HTTP server (captive portal)
+├── speedtest.py         # Implements download, upload, and ping tests
+├── logging.py           # Optimized logging functions (timestamps to the minute)
+├── network_driver.py    # Initializes the Ethernet interface using the W6100 driver; returns the driver instance
+├── ftp_client.py        # Basic FTP client for uploading buffered data
+├── utils.py             # Utility functions (e.g., timestamp formatting)
+├── config.json          # JSON configuration file
+├── session.json          # (Created at runtime) Persistent session data
+├── log.txt              # (Created at runtime) Log file
+└── lib/
+    └── w6100.py         # Low‑level driver for the W6100 Ethernet chip
