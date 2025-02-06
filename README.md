@@ -43,7 +43,7 @@ This repository includes modules for:
 
 ## Overview
 
-The BOB project is tailored for deployments where:
+The QT project is tailored for deployments where:
 - **Data Collection:** Periodically perform internet speed tests and capture GPS data.
 - **Data Logging:** Write the results to CSV files with a persistent session ID.
 - **Visual Feedback:** Use LED indicators to signal system status (startup, internet active, GPS lock, completion).
