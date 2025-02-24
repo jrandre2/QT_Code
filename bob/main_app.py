@@ -18,8 +18,14 @@ import speedtest
 import contextlib
 import atexit
 
-from bob.logger import logger
+# First import initialize module and set up the system
+from bob.initialize import initialize_system
+# Initialize configuration and logging systems
+config = initialize_system()
+
+# Now it's safe to import other modules
 from bob.config import DATA_DIR, SPEED_TEST_INTERVAL, DEVICE_ID
+from bob.logger import logger
 from bob.gps import read_gps
 from bob.led import ready_red_leds, intled_green, gpsled_green, bluelight_minion
 from bob.internet import check_internet, get_public_ip
