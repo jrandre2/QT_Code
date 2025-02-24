@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-bob/main_app.py
+bob/main_bob.py
 
 This is the core application for the Raspberry Pi device.
 It performs periodic internet speed tests, captures GPS data,
