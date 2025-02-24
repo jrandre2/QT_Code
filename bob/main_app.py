@@ -24,7 +24,7 @@ from bob.gps import read_gps
 from bob.led import ready_red_leds, intled_green, gpsled_green, bluelight_minion
 from bob.internet import check_internet, get_public_ip
 from bob.data_uploader import upload_csv_files
-from bob.activation import download_activation_file, check_activation_status
+from bob.activation import download_activation_file, check_activation_status, handle_extinction, is_device_extinct
 from bob.speedtest_upgrade import check_speedtest_version
 from bob.session import get_session
 
@@ -107,6 +107,14 @@ def main_loop():
     # Signal startup with red LEDs.
     ready_red_leds()
 
+    # Check if device is extinct before proceeding
+    if is_device_extinct():
+        logger.info("Device is marked as extinct. Entering minimal operation mode.")
+        bluelight_minion()
+        # You could implement a minimal operation loop here if needed
+        # For example, just respond to critical commands but don't collect data
+        return
+
     # Check for active internet connection.
     if not check_internet():
         logger.error("Internet not available. Exiting main loop.")
@@ -157,6 +165,11 @@ def main_loop():
 
     try:
         while True:
+            # Check extinction status at the start of each loop
+            if handle_extinction():
+                logger.info("Extinction detected during operation. Exiting main loop.")
+                break
+                
             current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
             # Run an internet speed test.
