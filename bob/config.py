@@ -2,12 +2,11 @@
 
 import os
 import configparser
-import logging
 import socket
 from pathlib import Path
 
-# Configure module logger
-logger = logging.getLogger('bob.config')
+# First import logger without any configuration dependencies
+from bob.logger import logger, configure_logger
 
 # Default configuration values
 DEFAULT_CONFIG = {
@@ -185,13 +184,20 @@ def get_device_id() -> str:
     # Last resort fallback
     return "UNKNOWN_DEVICE"
 
+# Set the device ID
+DEVICE_ID = get_device_id()
 
 # Create necessary directories
 for directory in [BASE_DIR, LOG_DIR, DATA_DIR, VERSIONS_DIR]:
     ensure_directory_exists(directory)
 
-# Set the device ID
-DEVICE_ID = get_device_id()
+# Now that all config is loaded, configure the logger with the final settings
+configure_logger(
+    log_dir=LOG_DIR,
+    log_level=LOG_LEVEL,
+    log_rotation_size=LOG_ROTATION_SIZE,
+    log_backup_count=LOG_BACKUP_COUNT
+)
 
 def print_config():
     """
