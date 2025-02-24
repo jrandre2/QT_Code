@@ -1,111 +1,52 @@
 # bob/logger.py
-
 import logging
 import os
-import sys
 from logging.handlers import RotatingFileHandler
 
-# Use environment variable or default for log directory
-LOG_DIR = os.environ.get('BOB_LOG_DIR', 'logs/')
-
-# Ensure the log directory exists
-if not os.path.exists(LOG_DIR):
-    try:
-        os.makedirs(LOG_DIR)
-    except Exception as e:
-        # Fall back to console logging if directory creation fails
-        print(f"Error creating log directory {LOG_DIR}: {e}")
-
-# Default log settings
-DEFAULT_LOG_LEVEL = logging.INFO
-DEFAULT_LOG_FILENAME = 'theminion.log'
-DEFAULT_LOG_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-DEFAULT_LOG_ROTATION_SIZE = 10485760  # 10MB
-DEFAULT_LOG_BACKUP_COUNT = 5
-
-# Create a logger instance for the package
+# Create a base logger with default settings
 logger = logging.getLogger('bob')
-logger.setLevel(DEFAULT_LOG_LEVEL)
+logger.setLevel(logging.INFO)
 
-# Add a console handler for initial logging (can be removed later if desired)
+# Add a console handler by default
 console_handler = logging.StreamHandler()
-console_handler.setFormatter(logging.Formatter(DEFAULT_LOG_FORMAT))
+console_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
 logger.addHandler(console_handler)
 
-# Try to set up file handler with defaults
-try:
-    file_handler = RotatingFileHandler(
-        filename=os.path.join(LOG_DIR, DEFAULT_LOG_FILENAME),
-        maxBytes=DEFAULT_LOG_ROTATION_SIZE,
-        backupCount=DEFAULT_LOG_BACKUP_COUNT
-    )
-    file_handler.setFormatter(logging.Formatter(DEFAULT_LOG_FORMAT))
-    logger.addHandler(file_handler)
-except Exception as e:
-    # Log to console if file handler setup fails
-    print(f"Error setting up log file: {e}")
-
+# Define the configure function but don't call it yet
 def configure_logger(log_dir=None, log_level=None, log_rotation_size=None, log_backup_count=None):
     """
-    Reconfigure logger with settings from config.
-    Called after config is fully initialized.
-    
-    Args:
-        log_dir (str): Directory to store log files
-        log_level (str): Log level as string (DEBUG, INFO, WARNING, ERROR, CRITICAL)
-        log_rotation_size (int): Maximum log file size in bytes before rotation
-        log_backup_count (int): Number of backup log files to keep
+    Configure logger with custom settings.
+    This will be called after config is loaded.
     """
-    global LOG_DIR
-    
     # Remove existing handlers
     for handler in logger.handlers[:]:
         logger.removeHandler(handler)
+        
+    # Re-add console handler
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+    logger.addHandler(console_handler)
     
-    # Update log directory if provided
-    if log_dir:
-        LOG_DIR = log_dir
-        # Ensure the directory exists
-        if not os.path.exists(LOG_DIR):
-            try:
-                os.makedirs(LOG_DIR)
-            except Exception as e:
-                print(f"Error creating log directory {LOG_DIR}: {e}")
-                # Keep console logging if directory creation fails
-                console_handler = logging.StreamHandler()
-                console_handler.setFormatter(logging.Formatter(DEFAULT_LOG_FORMAT))
-                logger.addHandler(console_handler)
-                return
-    
-    # Set the log level if provided
+    # Set log level if provided
     if log_level:
         try:
             level = getattr(logging, log_level.upper())
             logger.setLevel(level)
         except AttributeError:
             logger.warning(f"Invalid log level: {log_level}. Using default.")
-            logger.setLevel(DEFAULT_LOG_LEVEL)
     
-    # Set up rotating file handler
-    try:
-        handler = RotatingFileHandler(
-            filename=os.path.join(LOG_DIR, DEFAULT_LOG_FILENAME),
-            maxBytes=log_rotation_size or DEFAULT_LOG_ROTATION_SIZE,
-            backupCount=log_backup_count or DEFAULT_LOG_BACKUP_COUNT
-        )
-        handler.setFormatter(logging.Formatter(DEFAULT_LOG_FORMAT))
-        logger.addHandler(handler)
-        
-        # Optional: Add a console handler for debugging
-        if os.environ.get('BOB_DEBUG') == '1':
-            console_handler = logging.StreamHandler()
-            console_handler.setFormatter(logging.Formatter(DEFAULT_LOG_FORMAT))
-            logger.addHandler(console_handler)
-            
-        logger.info("Logger reconfigured")
-    except Exception as e:
-        # Fallback to console logging
-        console_handler = logging.StreamHandler()
-        console_handler.setFormatter(logging.Formatter(DEFAULT_LOG_FORMAT))
-        logger.addHandler(console_handler)
-        logger.error(f"Failed to configure file-based logging: {e}")
+    # Add file handler if log_dir is provided
+    if log_dir:
+        try:
+            os.makedirs(log_dir, exist_ok=True)
+            file_handler = RotatingFileHandler(
+                filename=os.path.join(log_dir, 'theminion.log'),
+                maxBytes=log_rotation_size or 10485760,  # 10MB default
+                backupCount=log_backup_count or 5
+            )
+            file_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+            file_handler.setFormatter(file_formatter)
+            logger.addHandler(file_handler)
+            logger.info("File logging configured in %s", log_dir)
+        except Exception as e:
+            logger.error(f"Failed to set up file logging: {e}")
