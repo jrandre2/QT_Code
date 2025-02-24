@@ -2,12 +2,11 @@
 import subprocess
 import logging
 import re
+from bob.config import SPEEDTEST_TARGET_VERSION
 
 logger = logging.getLogger('bob.speedtest_upgrade')
 
-TARGET_VERSION = "2.1.1"
-
-def check_and_upgrade_speedtest():
+def check_speedtest_version():
     """
     Check if the installed speedtest-cli matches the target version.
     If NOT, perform an upgrade to get the latest version.
@@ -33,25 +32,28 @@ def check_and_upgrade_speedtest():
         if match:
             current_version = match.group(1)
             
+            # Use version from config instead of hardcoded value
+            target_version = SPEEDTEST_TARGET_VERSION
+            
             # Only upgrade if the version doesn't match the target
-            if current_version != TARGET_VERSION:
+            if current_version != target_version:
                 logger.info("Speedtest version %s doesn't match target %s. Upgrading...", 
-                           current_version, TARGET_VERSION)
+                           current_version, target_version)
                 
                 # Perform upgrade without shell=True for better security
                 upgrade_result = subprocess.run(
-                    ["sudo", "pip3", "install", "speedtest-cli=="+TARGET_VERSION], 
+                    ["sudo", "pip3", "install", "speedtest-cli=="+target_version], 
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
                     text=True,
                     check=True
                 )
                 
-                logger.info("Speedtest upgraded successfully to %s", TARGET_VERSION)
+                logger.info("Speedtest upgraded successfully to %s", target_version)
                 return True
             else:
                 logger.info("Speedtest version already matches target %s. No upgrade needed.", 
-                           TARGET_VERSION)
+                           target_version)
         else:
             logger.error("Could not parse version from: %s", version_info)
             
@@ -66,7 +68,7 @@ def check_and_upgrade_speedtest():
 
 if __name__ == "__main__":
     # This allows the module to be run directly for testing
-    if check_and_upgrade_speedtest():
+    if check_speedtest_version():
         print("Speedtest was upgraded")
     else:
         print("No upgrade was performed")
