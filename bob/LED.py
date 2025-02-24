@@ -6,7 +6,7 @@ import logging
 logger = logging.getLogger('bob.led')
 
 # Initialize the LED strip
-ed_strip = apa102.APA102(num_led=2, global_brightness=20, mosi=11, sclk=10, order='rgb')
+led_strip = apa102.APA102(num_led=2, global_brightness=20, mosi=11, sclk=10, order='rgb')
 
 def clear_leds():
     led_strip.clear_strip()
