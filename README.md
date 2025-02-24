@@ -51,7 +51,7 @@ The QT project is tailored for deployments where:
 - **Connectivity:** Verify internet access and retrieve the public IP address.
 - **FTP Operations:** Upload collected CSV data and download software updates.
 
-The modular design allows each function to be maintained and tested separately.
+
 
 ## Modules
 
