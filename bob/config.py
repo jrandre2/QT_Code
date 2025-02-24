@@ -6,7 +6,7 @@ import socket
 import re
 from pathlib import Path
 
-# First import logger without any configuration dependencies
+# Import the base logger without configuration dependencies
 from bob.logger import logger, configure_logger
 
 # Default configuration values
@@ -318,13 +318,19 @@ DEVICE_ID = get_device_id()
 for directory in [BASE_DIR, LOG_DIR, DATA_DIR, VERSIONS_DIR]:
     ensure_directory_exists(directory)
 
-# Now that all config is loaded, configure the logger with the final settings
-configure_logger(
-    log_dir=LOG_DIR,
-    log_level=LOG_LEVEL,
-    log_rotation_size=LOG_ROTATION_SIZE,
-    log_backup_count=LOG_BACKUP_COUNT
-)
+# The initialization function that will be called after all config loading is complete
+def initialize_logging():
+    """
+    Initialize logging with the loaded configuration.
+    This function should be called after all configuration values are loaded.
+    """
+    configure_logger(
+        log_dir=LOG_DIR,
+        log_level=LOG_LEVEL,
+        log_rotation_size=LOG_ROTATION_SIZE,
+        log_backup_count=LOG_BACKUP_COUNT
+    )
+    logger.info("Logging system initialized with configuration settings")
 
 def print_config():
     """
