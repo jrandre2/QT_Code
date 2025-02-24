@@ -76,8 +76,8 @@ def run_checker():
     Check if the main application is running; if not, log the error,
     archive the log file, and reboot the device.
     """
-    # Check for main_app.py instead of mainBOB.py
-    process_name = 'main_app.py'
+    # Changed from main_app.py to mainBOB.py to match references in updater.py
+    process_name = 'mainBOB.py'
     
     if check_process(process_name):
         logger.info("Main application is running normally.")
