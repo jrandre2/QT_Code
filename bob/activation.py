@@ -1,6 +1,7 @@
 # File: bob/activation.py
 import os
 import logging
+import datetime  # Added the missing datetime import
 from bob.ftp_client import FTPClient
 from bob.config import FTP_DETAILS, DATA_DIR, LOG_DIR
 from bob.led import bluelight_minion
